@@ -294,6 +294,20 @@ header h1 {
 }
 
 /* ============================================================
+   Disclaimer
+   ============================================================ */
+#disclaimer {
+  font-size: 0.8rem;
+  color: #7a5800;
+  background: #fffbe6;
+  border-top: 1px solid #f0d080;
+  border-bottom: 1px solid #f0d080;
+  padding: 0.55rem 1rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ============================================================
    Export bar (footer)
    ============================================================ */
 #export-bar {
