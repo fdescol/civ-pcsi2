@@ -7,6 +7,51 @@ Page web statique permettant à chaque élève de consulter son planning
 
 ---
 
+## Automatisation (GitHub Actions)
+
+Le workflow `.github/workflows/sync.yml` synchronise automatiquement le colloscope
+depuis Google Sheets **chaque jour à 3h UTC** (5h Paris en été, 4h en hiver).
+
+### Fonctionnement
+
+| Code de sortie | Signification | Action du workflow |
+|---|---|---|
+| 0 | Aucune différence | Succès, rien à committer |
+| 3 | Mise à jour appliquée | Commit + push sur `main` → GitHub Pages redéploie |
+| 2 | Changement structurel suspect | Échec → email GitHub automatique |
+| 1 | Erreur réseau / `convert.py` | Échec → email GitHub automatique |
+
+### Lancement manuel
+
+Onglet **Actions** → workflow **"Sync colloscope"** → bouton **"Run workflow"**.
+
+### Lire le job summary
+
+Après chaque exécution : onglet **Actions** → cliquer sur le run → section **"Summary"**
+(affiche le statut, les fichiers commités ou le détail des avertissements structurels).
+
+### Que faire si le workflow échoue sur un changement structurel
+
+1. Cliquer sur le run échoué → étape **"Sync depuis Google Sheets"** → lire les avertissements
+2. Ouvrir le Google Sheets pour vérifier ce qui a changé :
+   [lien Sheets](https://docs.google.com/spreadsheets/d/1eL0ZbPJXE0zdFNRiFXLSVzSLKFqk2T9Y7VNR4qHAITM/edit)
+3. Adapter `convert.py` si nécessaire, puis relancer le workflow manuellement
+
+### Désactiver temporairement le cron
+
+Dans `.github/workflows/sync.yml`, commenter la ligne `- cron: '0 5 * * *'` :
+```yaml
+  schedule:
+    # - cron: '0 3 * * *'   # désactivé temporairement
+```
+
+### Notifications d'échec
+
+Les emails d'échec sont envoyés automatiquement par GitHub si les notifications sont activées :
+**Settings → Notifications → Actions → "Send notifications for failed workflows"**.
+
+---
+
 ## Mise à jour des données
 
 ### Workflow recommandé — synchronisation automatique
@@ -111,8 +156,12 @@ Modifier la fonction `load_mercredi_matin()` dans `convert.py`
 ## Structure
 
 ```
+├── .github/
+│   └── workflows/
+│       └── sync.yml         ← workflow GitHub Actions (sync quotidien)
 ├── Colles TDs et TPs.xlsx   ← source de vérité
 ├── convert.py               ← script de conversion
+├── sync.py                  ← script de synchronisation
 ├── requirements.txt
 ├── data.json                ← généré par convert.py
 ├── index.html

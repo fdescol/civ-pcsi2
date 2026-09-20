@@ -1,0 +1,138 @@
+name: Sync colloscope
+
+on:
+  schedule:
+    # Tous les jours à 3h UTC (5h Paris en été, 4h en hiver)
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Lancer sync.py et capturer son code de sortie exact.
+      # On désactive set -e localement pour que le shell ne s'arrête pas sur
+      # un exit non-zéro, puis on capture et réexporte le code.
+      - name: Sync depuis Google Sheets
+        id: sync
+        run: |
+          set +e
+          python sync.py --auto
+          CODE=$?
+          set -e
+          echo "exit_code=${CODE}" >> "$GITHUB_OUTPUT"
+          echo "Sync exit code: ${CODE}"
+
+      # -----------------------------------------------------------------------
+      # Cas exit 0 — aucune différence
+      - name: Summary — Pas de modification
+        if: steps.sync.outputs.exit_code == '0'
+        run: |
+          echo "## ✅ Pas de modification" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Le Google Sheets est identique au fichier local. Aucun commit nécessaire." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "_Exécuté le $(date -u '+%Y-%m-%d à %H:%M UTC')_" >> "$GITHUB_STEP_SUMMARY"
+
+      # -----------------------------------------------------------------------
+      # Cas exit 3 — mise à jour appliquée par sync.py, commit et push
+      - name: Commit et push
+        id: commit
+        if: steps.sync.outputs.exit_code == '3'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json "Colles TDs et TPs.xlsx" || true
+          if git diff --cached --quiet; then
+            echo "Aucun changement détecté dans le staging — commit ignoré."
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "chore: sync colloscope $(date -u '+%Y-%m-%d')"
+            git push
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Summary — Mise à jour appliquée
+        if: steps.sync.outputs.exit_code == '3'
+        run: |
+          if [ "${{ steps.commit.outputs.committed }}" = "true" ]; then
+            echo "## ✅ Mise à jour appliquée" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Le colloscope a été mis à jour et commité sur \`main\`." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Fichiers commités :**" >> "$GITHUB_STEP_SUMMARY"
+            echo "- \`data.json\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "- \`Colles TDs et TPs.xlsx\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "GitHub Pages se redéploiera automatiquement." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## ✅ Mise à jour appliquée (commit ignoré)" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "sync.py a régénéré data.json mais aucun fichier n'a changé dans le staging." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "_Exécuté le $(date -u '+%Y-%m-%d à %H:%M UTC')_" >> "$GITHUB_STEP_SUMMARY"
+
+      # -----------------------------------------------------------------------
+      # Cas exit 2 — changement structurel : job summary + échec
+      - name: Summary — Changement structurel
+        if: steps.sync.outputs.exit_code == '2'
+        run: |
+          echo "## ⚠️ Changement structurel détecté" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "La structure du Google Sheets a changé (feuille renommée, lignes/colonnes décalées)." >> "$GITHUB_STEP_SUMMARY"
+          echo "La mise à jour a été **annulée** pour éviter des données incorrectes." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Actions requises :**" >> "$GITHUB_STEP_SUMMARY"
+          echo "1. Consulter les logs de l'étape _Sync depuis Google Sheets_ ci-dessus pour le détail des avertissements" >> "$GITHUB_STEP_SUMMARY"
+          echo "2. Vérifier le Google Sheets : https://docs.google.com/spreadsheets/d/1eL0ZbPJXE0zdFNRiFXLSVzSLKFqk2T9Y7VNR4qHAITM/edit" >> "$GITHUB_STEP_SUMMARY"
+          echo "3. Adapter \`convert.py\` si nécessaire, puis relancer le workflow manuellement" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "_Exécuté le $(date -u '+%Y-%m-%d à %H:%M UTC')_" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Échouer — changement structurel
+        if: steps.sync.outputs.exit_code == '2'
+        run: exit 1
+
+      # -----------------------------------------------------------------------
+      # Cas exit 1 ou autre — erreur réseau / convert.py / inconnu
+      - name: Summary — Erreur
+        if: >
+          steps.sync.outputs.exit_code != '0' &&
+          steps.sync.outputs.exit_code != '2' &&
+          steps.sync.outputs.exit_code != '3'
+        run: |
+          echo "## ❌ Erreur de synchronisation" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Le script \`sync.py\` a échoué (code \`${{ steps.sync.outputs.exit_code }}\`)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Causes possibles : erreur réseau, \`convert.py\` qui plante, URL d'export Google modifiée." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Actions possibles :**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Consulter les logs de l'étape _Sync depuis Google Sheets_ ci-dessus" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Vérifier le Google Sheets : https://docs.google.com/spreadsheets/d/1eL0ZbPJXE0zdFNRiFXLSVzSLKFqk2T9Y7VNR4qHAITM/edit" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "_Exécuté le $(date -u '+%Y-%m-%d à %H:%M UTC')_" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Échouer — erreur
+        if: >
+          steps.sync.outputs.exit_code != '0' &&
+          steps.sync.outputs.exit_code != '2' &&
+          steps.sync.outputs.exit_code != '3'
+        run: exit 1

@@ -127,18 +127,75 @@ def print_report(diffs: list) -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_structure(remote_path: Path) -> list:
+    """
+    Verifie que le fichier distant est structurellement compatible avec convert.py.
+    Retourne une liste de warnings (vide = OK).
+
+    Verifications :
+      1. Les 4 feuilles attendues sont presentes
+      2. Colloscope >= 61 lignes
+      3. Colloscope >= 23 colonnes (colonne W presente)
+      4. Semaines entre 5 et 25 lignes
+      5. Ligne 1 Colloscope cols G-W (1-based 7-23) = entiers 1-52
+    """
+    wb = openpyxl.load_workbook(remote_path, data_only=True, read_only=True)
+    warnings = []
+
+    # 1. Feuilles attendues
+    for sheet in SHEETS_ACCENTED:
+        if sheet not in wb.sheetnames:
+            warnings.append(f"Feuille manquante : '{sheet}'")
+
+    # 2 & 3. Structure de Colloscope
+    if "Colloscope" in wb.sheetnames:
+        ws = wb["Colloscope"]
+        if (ws.max_row or 0) < 61:
+            warnings.append(
+                f"Colloscope : seulement {ws.max_row} lignes (attendu >= 61)"
+            )
+        if (ws.max_column or 0) < 23:
+            warnings.append(
+                f"Colloscope : seulement {ws.max_column} colonnes (attendu >= 23, colonne W)"
+            )
+        # 5. Ligne 1 cols G-W (1-based 7 a 23) doivent etre des entiers 1-52
+        bad_cols = []
+        for col in range(7, 24):  # G=7 ... W=23
+            v = ws.cell(row=1, column=col).value
+            try:
+                n = int(float(str(v))) if v is not None else None
+            except (ValueError, TypeError):
+                n = None
+            if n is None or not (1 <= n <= 52):
+                bad_cols.append(f"{chr(64 + col)}{1} = {v!r}")
+        if bad_cols:
+            warnings.append(
+                "Colloscope ligne 1 cols G-W : valeurs non valides (attendu entiers 1-52) : "
+                + ", ".join(bad_cols)
+            )
+
+    # 4. Semaines entre 5 et 25 lignes (header inclus)
+    if "Semaines" in wb.sheetnames:
+        ws_s = wb["Semaines"]
+        nrows = ws_s.max_row or 0
+        if not (5 <= nrows <= 25):
+            warnings.append(
+                f"Semaines : {nrows} lignes (attendu entre 5 et 25)"
+            )
+
+    wb.close()
+    return warnings
+
+
+# ---------------------------------------------------------------------------
 def apply_update() -> None:
     """Remplace le fichier local par le telechargement et relance convert.py."""
     shutil.copy(TMP_XLSX, LOCAL_XLSX)
     print(f"Fichier local mis a jour : {LOCAL_XLSX}")
     print("Relancement de convert.py...")
-    result = subprocess.run([sys.executable, str(CONVERT_PY)], check=True)
-    if result.returncode == 0:
-        print("\ndata.json regenere avec succes.")
-        print("Prochaines etapes :")
-        print('  git add data.json "Colles TDs et TPs.xlsx"')
-        print('  git commit -m "Update planning data"')
-        print("  git push")
+    subprocess.run([sys.executable, str(CONVERT_PY)], check=True)
+    print("\ndata.json regenere avec succes.")
+    sys.exit(3)
 
 
 # ---------------------------------------------------------------------------
@@ -167,6 +224,23 @@ def main() -> None:
 
     try:
         download_sheet()
+
+        # Verification structurelle (avant comparaison)
+        struct_warnings = check_structure(TMP_XLSX)
+        if struct_warnings:
+            print("\nAVERTISSEMENT — Changements structurels detectes :")
+            for w in struct_warnings:
+                print(f"  - {w}")
+            if args.auto:
+                print("\nMode --auto : mise a jour annulee (exit 2).")
+                sys.exit(2)
+            else:
+                answer = input(
+                    "\nDes changements structurels ont ete detectes. Continuer quand meme ? [o/N] "
+                ).strip().lower()
+                if answer not in ("o", "oui", "y", "yes"):
+                    print("Mise a jour annulee.")
+                    sys.exit(0)
 
         print("Comparaison des feuilles...", end=" ", flush=True)
         diffs = compare_workbooks(LOCAL_XLSX, TMP_XLSX)
