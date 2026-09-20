@@ -285,12 +285,7 @@ function eventCard(e, hideDay = false, mondayISO = null) {
     .replace(/[^a-z]/g, '');
   const subjClass  = `subj-${subjKey}`;
   const badgeClass = `badge-${e.type.toLowerCase()}`;
-  const showEndHour = e.type === 'Colle';
-  const timeStr    = e.startHour != null
-    ? (showEndHour
-        ? `${e.startHour}h – ${e.startHour + (e.durationHours || 1)}h`
-        : `${e.startHour}h`)
-    : '';
+  const timeStr = e.startHour != null ? `${e.startHour}h` : '';
   let dayPart = '';
   if (!hideDay && e.day) {
     dayPart = (mondayISO && e.day in DAY_ORDER)
