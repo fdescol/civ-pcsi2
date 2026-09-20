@@ -7,7 +7,7 @@
 // ----------------------------------------------------------------
 // State
 // ----------------------------------------------------------------
-let DATA = null;          // { students, weeks, events }
+let DATA = null;          // { generated, students, weeks, events }
 let currentStudent = null; // student object
 let currentWeekIdx = 0;   // index into DATA.weeks
 let currentView    = 'type'; // 'type' | 'day'
@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!readUrlParams()) {
         restoreLastStudent();
       }
+      renderDataDate();
     })
     .catch(err => {
       console.error('Erreur chargement:', err);
@@ -58,6 +59,20 @@ function setView(v) {
   document.getElementById('btn-view-type').setAttribute('aria-pressed', v === 'type');
   document.getElementById('btn-view-day').setAttribute('aria-pressed',  v === 'day');
   renderWeek();
+}
+
+// ----------------------------------------------------------------
+// Data date
+// ----------------------------------------------------------------
+function renderDataDate() {
+  const el = document.getElementById('disclaimer-inline');
+  if (!el || !DATA || !DATA.generated) return;
+  const d = new Date(DATA.generated);
+  const fmt = new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris'
+  }).format(d);
+  el.textContent = `⚠ Seul le colloscope officiel fait foi — vérifiez horaires et salles. · Données au ${fmt}`;
 }
 
 // ----------------------------------------------------------------

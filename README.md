@@ -9,7 +9,31 @@ Page web statique permettant à chaque élève de consulter son planning
 
 ## Mise à jour des données
 
-1. Modifier `Colles TDs et TPs.xlsx`
+### Workflow recommandé — synchronisation automatique
+
+```bash
+python sync.py
+```
+
+Le script télécharge la dernière version du Google Sheets (aucune configuration requise — fichier public),
+compare avec le fichier local, affiche les différences et propose de mettre à jour.
+
+```bash
+# Après confirmation de sync.py :
+git add data.json "Colles TDs et TPs.xlsx"
+git commit -m "Update planning data"
+git push
+```
+
+Options :
+```bash
+python sync.py --check   # vérifie uniquement, sans modifier
+python sync.py --auto    # met à jour sans confirmation (usage batch)
+```
+
+### Workflow manuel (si besoin)
+
+1. Télécharger manuellement `Colles TDs et TPs.xlsx` depuis Google Sheets (Fichier → Télécharger → Excel)
 2. Regénérer le JSON :
    ```bash
    pip install -r requirements.txt
@@ -17,7 +41,7 @@ Page web statique permettant à chaque élève de consulter son planning
    ```
 3. Publier :
    ```bash
-   git add data.json
+   git add data.json "Colles TDs et TPs.xlsx"
    git commit -m "Update planning data"
    git push
    ```

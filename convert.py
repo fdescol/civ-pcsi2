@@ -5,6 +5,7 @@ Usage : python convert.py
 """
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 import openpyxl
 
@@ -607,9 +608,10 @@ def main():
 
     # 9. Écriture
     data = {
-        "students": students,
-        "weeks":    weeks,
-        "events":   all_events,
+        "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "students":  students,
+        "weeks":     weeks,
+        "events":    all_events,
     }
     OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')), encoding="utf-8")
     print(f"\nOK: {OUT} ecrit ({OUT.stat().st_size // 1024} Ko)")
