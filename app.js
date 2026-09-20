@@ -182,15 +182,27 @@ function selectStudent(studentId) {
 }
 
 function findCurrentWeekIdx() {
-  const now = Date.now();
-  // Find first week whose monday >= today
+  // Utilise midi UTC pour éviter les décalages de fuseau sur le lundi ISO
+  const today = new Date();
+  // Samedi (6) ou dimanche (0) → pointer vers la semaine suivante
+  const dayOfWeek = today.getDay(); // 0=dim, 6=sam
+  const lookAhead = (dayOfWeek === 0 || dayOfWeek === 6);
+
   for (let i = 0; i < DATA.weeks.length; i++) {
-    const monday = new Date(DATA.weeks[i].mondayISO).getTime();
-    const sunday = monday + 6 * 86400000;
-    if (now >= monday && now <= sunday) return i;           // current week
-    if (monday > now) return i;                              // next upcoming week
+    const monday = new Date(DATA.weeks[i].mondayISO + 'T12:00:00Z');
+    const friday = new Date(monday.getTime() + 4 * 86400000);
+    const nextMonday = new Date(monday.getTime() + 7 * 86400000);
+
+    if (!lookAhead) {
+      // Lun–Ven : retourner la semaine dont le lundi <= aujourd'hui <= vendredi
+      if (today >= monday && today <= friday) return i;
+      if (monday > today) return i; // première semaine future
+    } else {
+      // Sam–Dim : retourner la première semaine dont le lundi est après aujourd'hui
+      if (monday > today) return i;
+    }
   }
-  return DATA.weeks.length - 1;                             // past all: last week
+  return DATA.weeks.length - 1;
 }
 
 // ----------------------------------------------------------------
