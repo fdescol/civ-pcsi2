@@ -376,30 +376,36 @@ function writeUrlParams() {
 // ----------------------------------------------------------------
 // ICS Export (RFC 5545)
 // ----------------------------------------------------------------
-const MONTHS_FR = ['Jan','Fév','Mar','Avr','Mai','Juin','Jul','Aoû','Sep','Oct','Nov','Déc'];
 
-/** Is date in DST (CEST = UTC+2) for Europe/Paris? */
-function isDST(date) {
-  // DST starts last Sunday of March at 2:00, ends last Sunday of October at 3:00
-  const year = date.getUTCFullYear();
-  const lastSunMarch  = lastSundayOfMonth(year, 2);   // month 2 = March (0-based)
-  const lastSunOctober= lastSundayOfMonth(year, 9);   // month 9 = October
-  return date >= lastSunMarch && date < lastSunOctober;
+/**
+ * Retourne l'offset Europe/Paris en minutes pour une date locale donnée.
+ * Utilise l'API Intl pour déterminer si la date est en heure d'été (UTC+2)
+ * ou en heure d'hiver (UTC+1), sans calcul manuel DST.
+ */
+function parisOffsetMinutes(isoLocalNoTZ) {
+  // On sonde l'offset réel via Intl en comparant l'heure UTC interprétée
+  // avec l'heure locale Paris correspondante.
+  const utcDate = new Date(isoLocalNoTZ + 'Z'); // interprète comme UTC
+  const parts = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris',
+    hour: 'numeric', minute: 'numeric',
+    hour12: false,
+  }).formatToParts(utcDate);
+  const h = parseInt(parts.find(p => p.type === 'hour').value, 10);
+  const m = parseInt(parts.find(p => p.type === 'minute').value, 10);
+  const utcH = utcDate.getUTCHours();
+  const utcM = utcDate.getUTCMinutes();
+  let diff = (h * 60 + m) - (utcH * 60 + utcM);
+  if (diff > 720)  diff -= 1440;
+  if (diff < -720) diff += 1440;
+  return diff; // +60 (hiver) ou +120 (été)
 }
 
-function lastSundayOfMonth(year, month) {
-  // Find last day of month, walk back to Sunday
-  const d = new Date(Date.UTC(year, month + 1, 0)); // last day
-  d.setUTCDate(d.getUTCDate() - d.getUTCDay());     // back to Sunday
-  return d;
-}
-
-function toICSDate(date) {
-  const offset = isDST(date) ? -2 : -1; // UTC+2 summer, UTC+1 winter
-  const utc = new Date(date.getTime() - offset * 3600000);
+/** Formate une Date JS (déjà en UTC) en chaîne ICS : 20260923T140000Z */
+function toICSDate(dateUTC) {
   const pad = n => String(n).padStart(2, '0');
-  return `${utc.getUTCFullYear()}${pad(utc.getUTCMonth()+1)}${pad(utc.getUTCDate())}` +
-         `T${pad(utc.getUTCHours())}${pad(utc.getUTCMinutes())}00Z`;
+  return `${dateUTC.getUTCFullYear()}${pad(dateUTC.getUTCMonth()+1)}${pad(dateUTC.getUTCDate())}` +
+         `T${pad(dateUTC.getUTCHours())}${pad(dateUTC.getUTCMinutes())}00Z`;
 }
 
 function eventToVEVENT(e, mondayISO, studentId) {
@@ -407,9 +413,18 @@ function eventToVEVENT(e, mondayISO, studentId) {
   const startHour = e.startHour ?? 8;
   const duration  = e.durationHours || 1;
 
-  const startDate = new Date(`${mondayISO}T${String(startHour).padStart(2,'0')}:00:00+01:00`);
-  startDate.setDate(startDate.getDate() + dayOffset);
-  const endDate   = new Date(startDate.getTime() + duration * 3600000);
+  // Calcule la date locale (sans fuseau) du jour de l'événement
+  const pad2 = n => String(n).padStart(2, '0');
+  const mondayDate = new Date(mondayISO + 'T12:00:00Z');
+  const eventLocalDate = new Date(mondayDate.getTime() + dayOffset * 86400000);
+  const dateStr = `${eventLocalDate.getUTCFullYear()}-${pad2(eventLocalDate.getUTCMonth()+1)}-${pad2(eventLocalDate.getUTCDate())}`;
+  const localNoTZ = `${dateStr}T${pad2(startHour)}:00:00`;
+
+  // Détermine l'offset réel Europe/Paris pour cette date/heure locale
+  const offsetMin = parisOffsetMinutes(localNoTZ);
+  // Convertit en UTC : heure locale − offset
+  const startUTC = new Date(new Date(localNoTZ + 'Z').getTime() - offsetMin * 60000);
+  const endUTC   = new Date(startUTC.getTime() + duration * 3600000);
 
   const uid     = `${e.type}-${e.subject.replace(/\s/g,'')}-${e.weekNumber}-${studentId}@civ-pcsi2`;
   const summary = `[${e.type}] ${e.subject}`;
@@ -422,8 +437,8 @@ function eventToVEVENT(e, mondayISO, studentId) {
     'BEGIN:VEVENT',
     `UID:${uid}`,
     `DTSTAMP:${toICSDate(new Date())}`,
-    `DTSTART:${toICSDate(startDate)}`,
-    `DTEND:${toICSDate(endDate)}`,
+    `DTSTART:${toICSDate(startUTC)}`,
+    `DTEND:${toICSDate(endUTC)}`,
     `SUMMARY:${summary}`,
     desc ? `DESCRIPTION:${desc}` : null,
     e.room ? `LOCATION:${e.room}` : null,
