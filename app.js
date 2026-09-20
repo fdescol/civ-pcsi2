@@ -157,7 +157,6 @@ function selectStudent(studentId) {
   document.getElementById('student-info').hidden  = false;
   document.getElementById('week-nav').hidden       = false;
   document.getElementById('view-toggle').hidden    = false;
-  document.getElementById('export-bar').hidden     = false;
 
   populateWeekSelect();
 

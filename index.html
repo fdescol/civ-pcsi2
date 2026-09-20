@@ -9,7 +9,13 @@
 <body>
 
   <header>
-    <h1>Planning PCSI2</h1>
+    <div class="header-top">
+      <h1>Planning PCSI2</h1>
+      <div class="header-ics">
+        <button id="btn-ics-week" title="Exporter cette semaine en .ics">📥 Sem.</button>
+        <button id="btn-ics-all"  title="Exporter toute l'année en .ics">📥 Année</button>
+      </div>
+    </div>
     <div class="search-wrapper">
       <input
         id="student-search"
@@ -46,10 +52,7 @@
 
   <main id="schedule"></main>
 
-  <footer id="export-bar" hidden>
-    <button id="btn-ics-week">📥 Cette semaine (.ics)</button>
-    <button id="btn-ics-all">📥 Toute l'année (.ics)</button>
-  </footer>
+  <footer id="export-bar" hidden></footer>
 
   <noscript>
     <p style="text-align:center;padding:2rem">JavaScript est requis pour afficher le planning.</p>
