@@ -10,6 +10,7 @@
 let DATA = null;          // { students, weeks, events }
 let currentStudent = null; // student object
 let currentWeekIdx = 0;   // index into DATA.weeks
+let currentView    = 'type'; // 'type' | 'day'
 
 const DAY_ORDER = { Lundi: 0, Mardi: 1, Mercredi: 2, Jeudi: 3, Vendredi: 4 };
 
@@ -33,9 +34,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-prev').addEventListener('click', () => navigate(-1));
   document.getElementById('btn-next').addEventListener('click', () => navigate(+1));
+  document.getElementById('week-select').addEventListener('change', e => {
+    currentWeekIdx = parseInt(e.target.value, 10);
+    renderWeek();
+    writeUrlParams();
+  });
+  document.getElementById('btn-view-type').addEventListener('click', () => setView('type'));
+  document.getElementById('btn-view-day').addEventListener('click',  () => setView('day'));
   document.getElementById('btn-ics-week').addEventListener('click', exportWeek);
   document.getElementById('btn-ics-all').addEventListener('click', exportAll);
 });
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('btn-view-type').classList.toggle('active', v === 'type');
+  document.getElementById('btn-view-day').classList.toggle('active',  v === 'day');
+  document.getElementById('btn-view-type').setAttribute('aria-pressed', v === 'type');
+  document.getElementById('btn-view-day').setAttribute('aria-pressed',  v === 'day');
+  renderWeek();
+}
 
 // ----------------------------------------------------------------
 // Autocomplete
@@ -104,6 +121,18 @@ function initAutocomplete() {
 // ----------------------------------------------------------------
 const LS_KEY = 'civ-pcsi2-last-student';
 
+function populateWeekSelect() {
+  const sel = document.getElementById('week-select');
+  sel.innerHTML = DATA.weeks.map((w, i) => {
+    const monday = new Date(w.mondayISO);
+    const friday = new Date(w.mondayISO);
+    friday.setDate(friday.getDate() + 4);
+    const fmt = { day: 'numeric', month: 'short' };
+    const label = `Sem. ${w.label} — ${monday.toLocaleDateString('fr-FR', fmt)} › ${friday.toLocaleDateString('fr-FR', fmt)}`;
+    return `<option value="${i}">${label}</option>`;
+  }).join('');
+}
+
 function selectStudent(studentId) {
   currentStudent = DATA.students.find(s => s.id === studentId);
   if (!currentStudent) return;
@@ -119,9 +148,12 @@ function selectStudent(studentId) {
   ].filter(Boolean).join(' · ');
   document.getElementById('student-meta').textContent = meta;
 
-  document.getElementById('student-info').hidden = false;
-  document.getElementById('week-nav').hidden      = false;
-  document.getElementById('export-bar').hidden    = false;
+  document.getElementById('student-info').hidden  = false;
+  document.getElementById('week-nav').hidden       = false;
+  document.getElementById('view-toggle').hidden    = false;
+  document.getElementById('export-bar').hidden     = false;
+
+  populateWeekSelect();
 
   // Find current/next week
   currentWeekIdx = findCurrentWeekIdx();
@@ -148,14 +180,8 @@ function renderWeek() {
   if (!currentStudent || !DATA) return;
   const week = DATA.weeks[currentWeekIdx];
 
-  // Week label
-  const mondayDate = new Date(week.mondayISO);
-  const fridayDate = new Date(week.mondayISO);
-  fridayDate.setDate(fridayDate.getDate() + 4);
-  const fmtOpts = { day: 'numeric', month: 'short' };
-  const locale  = 'fr-FR';
-  const labelDate = `${mondayDate.toLocaleDateString(locale, fmtOpts)} – ${fridayDate.toLocaleDateString(locale, fmtOpts)} ${mondayDate.getFullYear()}`;
-  document.getElementById('week-label').textContent = `Sem. ${week.label} — ${labelDate}`;
+  // Sync week select
+  document.getElementById('week-select').value = currentWeekIdx;
 
   // Nav buttons
   document.getElementById('btn-prev').disabled = currentWeekIdx === 0;
@@ -167,53 +193,67 @@ function renderWeek() {
     e.studentIds.includes(currentStudent.id)
   );
 
-  // Group by type, then sort within each type by day then startHour
-  const TYPE_ORDER  = { Colle: 0, TP: 1, TD: 2, LV2: 3 };
-  const TYPE_LABELS = { Colle: 'Colles', TP: 'Travaux Pratiques', TD: 'Travaux Dirigés', LV2: 'LV2' };
-
-  const byType = {};
-  evts.forEach(e => {
-    const t = e.type;
-    if (!byType[t]) byType[t] = [];
-    byType[t].push(e);
-  });
-
-  Object.values(byType).forEach(arr => arr.sort((a, b) => {
-    const dDiff = (DAY_ORDER[a.day] ?? 9) - (DAY_ORDER[b.day] ?? 9);
-    if (dDiff !== 0) return dDiff;
-    return (a.startHour ?? 99) - (b.startHour ?? 99);
-  }));
-
-  // Render
   const schedule = document.getElementById('schedule');
   if (!evts.length) {
     schedule.innerHTML = '<p class="no-events">Aucun cours cette semaine.</p>';
     return;
   }
 
-  const types = Object.keys(byType).sort((a, b) => (TYPE_ORDER[a] ?? 9) - (TYPE_ORDER[b] ?? 9));
-  schedule.innerHTML = types.map(type => `
-    <div class="day-block">
-      <div class="day-title">${TYPE_LABELS[type] || type}</div>
-      ${byType[type].map(eventCard).join('')}
-    </div>
-  `).join('');
+  schedule.innerHTML = currentView === 'day' ? renderByDay(evts) : renderByType(evts);
 }
 
-function eventCard(e) {
-  const typeClass   = `type-${e.type.toLowerCase()}`;
-  const subjKey     = e.subject.toLowerCase()
+const TYPE_ORDER  = { Colle: 0, TP: 1, TD: 2, LV2: 3 };
+const TYPE_LABELS = { Colle: 'Colles', TP: 'Travaux Pratiques', TD: 'Travaux Dirigés', LV2: 'LV2' };
+
+function renderByType(evts) {
+  const byType = {};
+  evts.forEach(e => { (byType[e.type] = byType[e.type] || []).push(e); });
+  Object.values(byType).forEach(arr => arr.sort((a, b) => {
+    const d = (DAY_ORDER[a.day] ?? 9) - (DAY_ORDER[b.day] ?? 9);
+    return d !== 0 ? d : (a.startHour ?? 99) - (b.startHour ?? 99);
+  }));
+  return Object.keys(byType)
+    .sort((a, b) => (TYPE_ORDER[a] ?? 9) - (TYPE_ORDER[b] ?? 9))
+    .map(type => `
+      <div class="day-block">
+        <div class="day-title">${TYPE_LABELS[type] || type}</div>
+        ${byType[type].map(eventCard).join('')}
+      </div>
+    `).join('');
+}
+
+function renderByDay(evts) {
+  const byDay = {};
+  evts.forEach(e => { (byDay[e.day] = byDay[e.day] || []).push(e); });
+  Object.values(byDay).forEach(arr => arr.sort((a, b) => {
+    const t = (TYPE_ORDER[a.type] ?? 9) - (TYPE_ORDER[b.type] ?? 9);
+    return t !== 0 ? t : (a.startHour ?? 99) - (b.startHour ?? 99);
+  }));
+  return Object.keys(byDay)
+    .sort((a, b) => (DAY_ORDER[a] ?? 9) - (DAY_ORDER[b] ?? 9))
+    .map(day => `
+      <div class="day-block">
+        <div class="day-title">${day}</div>
+        ${byDay[day].map(e => eventCard(e, true)).join('')}
+      </div>
+    `).join('');
+}
+
+function eventCard(e, hideDay = false) {
+  const typeClass  = `type-${e.type.toLowerCase()}`;
+  const subjKey    = e.subject.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z]/g, '');
-  const subjClass   = `subj-${subjKey}`;
-  const badgeClass  = `badge-${e.type.toLowerCase()}`;
-  const timeStr = e.startHour != null
+  const subjClass  = `subj-${subjKey}`;
+  const badgeClass = `badge-${e.type.toLowerCase()}`;
+  const timeStr    = e.startHour != null
     ? `${e.startHour}h – ${e.startHour + (e.durationHours || 1)}h`
     : '';
-  const dayTime = [e.day, timeStr].filter(Boolean).join(' · ');
-  const detail = [
-    e.teacher ? e.teacher : null,
-    e.room    ? `Salle : ${e.room}` : null,
+  const dayPart  = hideDay ? '' : e.day;
+  const timePart = [dayPart, timeStr].filter(Boolean).join(' · ');
+  const detail   = [
+    e.teacher || null,
+    e.room ? `Salle : ${e.room}` : null,
   ].filter(Boolean).join(' · ');
 
   return `
@@ -221,7 +261,7 @@ function eventCard(e) {
       <div class="event-header">
         <span class="badge-type ${badgeClass}">${e.type}</span>
         <span class="event-subject">${e.subject}</span>
-        ${dayTime ? `<span class="event-time">${dayTime}</span>` : ''}
+        ${timePart ? `<span class="event-time">${timePart}</span>` : ''}
       </div>
       ${detail ? `<div class="event-detail">${detail}</div>` : ''}
     </div>

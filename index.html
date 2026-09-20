@@ -31,9 +31,14 @@
 
   <nav id="week-nav" hidden>
     <button id="btn-prev" aria-label="Semaine précédente">&#8592;</button>
-    <span id="week-label"></span>
+    <select id="week-select" aria-label="Choisir une semaine"></select>
     <button id="btn-next" aria-label="Semaine suivante">&#8594;</button>
   </nav>
+
+  <div id="view-toggle" hidden>
+    <button id="btn-view-type" class="view-btn active" aria-pressed="true">Par type</button>
+    <button id="btn-view-day"  class="view-btn"        aria-pressed="false">Par jour</button>
+  </div>
 
   <main id="schedule"></main>
 
