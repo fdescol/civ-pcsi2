@@ -7,7 +7,8 @@
   --border: #e5e7eb;
   --text: #1f2328;
   --muted: #57606a;
-  --accent: #3b82d4;
+  --accent: #3b82d4;    /* couleur UI (boutons, focus) */
+  --header-bg: #0f2a4a; /* fond du header (fait ressortir le logo) */
 
   /* Types */
   --colle: #e84040;
@@ -42,9 +43,9 @@ body {
    Header / recherche
    ============================================================ */
 header {
-  background: var(--accent);
+  background: var(--header-bg);
   color: #fff;
-  padding: 0.6rem 1rem 0.4rem;
+  padding: 0.5rem 1rem 0.4rem;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -65,7 +66,7 @@ header h1 {
 }
 
 #header-logo {
-  height: 36px;
+  height: 46px;
   width: auto;
   display: block;
 }
@@ -102,8 +103,8 @@ header h1 {
 #student-search {
   flex: 1;
   width: 100%;
-  padding: 0.55rem 0.75rem;
-  font-size: 1rem;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.875rem;
   border: none;
   border-radius: 6px;
   outline: none;
