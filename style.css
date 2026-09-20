@@ -1,0 +1,302 @@
+/* ============================================================
+   Variables & reset
+   ============================================================ */
+:root {
+  --bg: #ffffff;
+  --surface: #f7f8fa;
+  --border: #e5e7eb;
+  --text: #1f2328;
+  --muted: #57606a;
+  --accent: #3b82d4;
+
+  /* Types */
+  --colle: #e84040;
+  --tp:    #e07b10;
+  --td:    #1e7e3e;
+  --lv2:   #7c5cd8;
+
+  /* Matières */
+  --maths:   #3b82d4;
+  --anglais: #e07b10;
+  --si:      #1e7e3e;
+  --physique:#7c5cd8;
+  --chimie:  #d4376b;
+  --francais:#43a09a;
+  --info:    #6b7280;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   Header / recherche
+   ============================================================ */
+header {
+  background: var(--accent);
+  color: #fff;
+  padding: 1rem 1rem 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.01em;
+}
+
+.search-wrapper {
+  position: relative;
+}
+
+#student-search {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  outline: none;
+  background: #fff;
+  color: var(--text);
+}
+
+#suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 0 0 8px 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  list-style: none;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+}
+
+#suggestions:empty { display: none; }
+
+#suggestions li {
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+#suggestions li:last-child { border-bottom: none; }
+#suggestions li:hover, #suggestions li[aria-selected="true"] {
+  background: var(--surface);
+}
+
+/* ============================================================
+   Student info bar
+   ============================================================ */
+#student-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+#student-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+/* ============================================================
+   Week navigation
+   ============================================================ */
+#week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  gap: 0.5rem;
+}
+
+#week-nav button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+#week-nav button:hover:not(:disabled) { background: var(--border); }
+#week-nav button:disabled { opacity: 0.35; cursor: default; }
+
+#week-label {
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+/* ============================================================
+   Schedule
+   ============================================================ */
+#schedule {
+  flex: 1;
+  padding: 0.75rem 1rem 5rem;
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.day-block { margin-bottom: 1.25rem; }
+
+.day-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 0.2rem 0 0.4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+}
+
+.event-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0.75rem 0.65rem 1rem;
+  border-radius: 8px;
+  background: var(--surface);
+  border-left: 4px solid var(--border);
+  margin-bottom: 0.5rem;
+}
+
+.event-card.type-colle  { border-left-color: var(--colle); }
+.event-card.type-tp     { border-left-color: var(--tp); }
+.event-card.type-td     { border-left-color: var(--td); }
+.event-card.type-lv2    { border-left-color: var(--lv2); }
+
+.event-card.subj-mathematiques { border-left-color: var(--maths); }
+.event-card.subj-anglais       { border-left-color: var(--anglais); }
+.event-card.subj-si            { border-left-color: var(--si); }
+.event-card.subj-physique      { border-left-color: var(--physique); }
+.event-card.subj-chimie        { border-left-color: var(--chimie); }
+.event-card.subj-francais      { border-left-color: var(--francais); }
+.event-card.subj-info          { border-left-color: var(--info); }
+
+.event-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge-type {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.badge-colle  { background: var(--colle); }
+.badge-tp     { background: var(--tp); }
+.badge-td     { background: var(--td); }
+.badge-lv2    { background: var(--lv2); }
+
+.event-subject {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.event-time {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.event-detail {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.no-events {
+  text-align: center;
+  color: var(--muted);
+  padding: 2.5rem 1rem;
+  font-size: 0.95rem;
+}
+
+/* ============================================================
+   Export bar (footer)
+   ============================================================ */
+#export-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -2px 8px rgba(0,0,0,.06);
+  z-index: 50;
+}
+
+#export-bar button {
+  flex: 1;
+  padding: 0.6rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+  min-height: 44px;
+  transition: background 0.15s;
+}
+#export-bar button:hover { background: var(--border); }
+
+/* ============================================================
+   Responsive — desktop
+   ============================================================ */
+@media (min-width: 768px) {
+  header { padding: 1rem 2rem 0.75rem; }
+  #student-info { padding: 0.5rem 2rem; }
+  #week-nav { padding: 0.6rem 2rem; }
+  #schedule { padding: 1rem 0 5rem; }
+  #export-bar { padding: 0.65rem 2rem; max-width: 720px; margin: 0 auto; left: 0; right: 0; }
+
+  .day-block-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1rem;
+  }
+}

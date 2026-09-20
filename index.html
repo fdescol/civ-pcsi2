@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planning PCSI2 — CIV</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Planning PCSI2</h1>
+    <div class="search-wrapper">
+      <input
+        id="student-search"
+        type="text"
+        placeholder="Rechercher un étudiant…"
+        autocomplete="off"
+        aria-label="Rechercher un étudiant"
+        aria-autocomplete="list"
+        aria-controls="suggestions"
+      />
+      <ul id="suggestions" role="listbox" aria-label="Suggestions"></ul>
+    </div>
+  </header>
+
+  <section id="student-info" hidden>
+    <span id="student-name"></span>
+    <span id="student-meta"></span>
+  </section>
+
+  <nav id="week-nav" hidden>
+    <button id="btn-prev" aria-label="Semaine précédente">&#8592;</button>
+    <span id="week-label"></span>
+    <button id="btn-next" aria-label="Semaine suivante">&#8594;</button>
+  </nav>
+
+  <main id="schedule"></main>
+
+  <footer id="export-bar" hidden>
+    <button id="btn-ics-week">📥 Cette semaine (.ics)</button>
+    <button id="btn-ics-all">📥 Toute l'année (.ics)</button>
+  </footer>
+
+  <noscript>
+    <p style="text-align:center;padding:2rem">JavaScript est requis pour afficher le planning.</p>
+  </noscript>
+
+  <script src="app.js"></script>
+</body>
+</html>
