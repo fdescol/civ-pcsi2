@@ -10,29 +10,31 @@
 <body>
 
   <header>
-    <div class="header-top">
+    <div id="header-banner">
       <h1>
-        <img src="logo-1line.png" alt="Planning PCSI2 CIV" id="header-logo" />
+        <img src="logo_resized_text.png" alt="PCSI2 | CIV" id="header-logo" />
       </h1>
       <div class="header-ics">
         <button id="btn-ics-week" title="Exporter cette semaine en .ics">📥 Sem.</button>
         <button id="btn-ics-all"  title="Exporter toute l'année en .ics">📥 Année</button>
       </div>
     </div>
-    <div class="search-wrapper">
-      <input
-        id="student-search"
-        type="text"
-        placeholder="Rechercher un étudiant…"
-        autocomplete="off"
-        aria-label="Rechercher un étudiant"
-        aria-autocomplete="list"
-        aria-controls="suggestions"
-      />
-      <button id="btn-clear-search" aria-label="Vider la recherche" hidden>&#x2715;</button>
-      <ul id="suggestions" role="listbox" aria-label="Suggestions"></ul>
+    <div id="header-search-bar">
+      <div class="search-wrapper">
+        <input
+          id="student-search"
+          type="text"
+          placeholder="Rechercher un étudiant…"
+          autocomplete="off"
+          aria-label="Rechercher un étudiant"
+          aria-autocomplete="list"
+          aria-controls="suggestions"
+        />
+        <button id="btn-clear-search" aria-label="Vider la recherche" hidden>&#x2715;</button>
+        <ul id="suggestions" role="listbox" aria-label="Suggestions"></ul>
+      </div>
+      <p id="disclaimer-inline">⚠ Seul le colloscope officiel fait foi — vérifiez horaires et salles.</p>
     </div>
-    <p id="disclaimer-inline">⚠ Seul le colloscope officiel fait foi — vérifiez horaires et salles.</p>
   </header>
 
   <section id="student-info" hidden>
