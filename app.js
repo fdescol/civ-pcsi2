@@ -205,13 +205,29 @@ function renderWeek() {
     return;
   }
 
-  schedule.innerHTML = currentView === 'day' ? renderByDay(evts) : renderByType(evts);
+  schedule.innerHTML = currentView === 'day'
+    ? renderByDay(evts, week.mondayISO)
+    : renderByType(evts, week.mondayISO);
 }
 
 const TYPE_ORDER  = { Colle: 0, TP: 1, TD: 2, LV2: 3 };
 const TYPE_LABELS = { Colle: 'Colles', TP: 'Travaux Pratiques', TD: 'Travaux Dirigés', LV2: 'LV2' };
 
-function renderByType(evts) {
+/** Calcule la date d'un jour de la semaine à partir du lundi ISO */
+function eventDate(mondayISO, dayName) {
+  const d = new Date(mondayISO + 'T12:00:00');
+  d.setDate(d.getDate() + (DAY_ORDER[dayName] ?? 0));
+  return d;
+}
+
+/** Formate une Date en "Mercredi 24 sept." */
+function formatDate(date) {
+  const days  = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const months = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+  return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
+}
+
+function renderByType(evts, mondayISO) {
   const byType = {};
   evts.forEach(e => { (byType[e.type] = byType[e.type] || []).push(e); });
   Object.values(byType).forEach(arr => arr.sort((a, b) => {
@@ -223,12 +239,12 @@ function renderByType(evts) {
     .map(type => `
       <div class="day-block">
         <div class="day-title">${TYPE_LABELS[type] || type}</div>
-        ${byType[type].map(eventCard).join('')}
+        ${byType[type].map(e => eventCard(e, false, mondayISO)).join('')}
       </div>
     `).join('');
 }
 
-function renderByDay(evts) {
+function renderByDay(evts, mondayISO) {
   const byDay = {};
   evts.forEach(e => { (byDay[e.day] = byDay[e.day] || []).push(e); });
   Object.values(byDay).forEach(arr => arr.sort((a, b) => {
@@ -237,15 +253,18 @@ function renderByDay(evts) {
   }));
   return Object.keys(byDay)
     .sort((a, b) => (DAY_ORDER[a] ?? 9) - (DAY_ORDER[b] ?? 9))
-    .map(day => `
-      <div class="day-block">
-        <div class="day-title">${day}</div>
-        ${byDay[day].map(e => eventCard(e, true)).join('')}
-      </div>
-    `).join('');
+    .map(day => {
+      const date = eventDate(mondayISO, day);
+      return `
+        <div class="day-block">
+          <div class="day-title">${formatDate(date)}</div>
+          ${byDay[day].map(e => eventCard(e, true, mondayISO)).join('')}
+        </div>
+      `;
+    }).join('');
 }
 
-function eventCard(e, hideDay = false) {
+function eventCard(e, hideDay = false, mondayISO = null) {
   const typeClass  = `type-${e.type.toLowerCase()}`;
   const subjKey    = e.subject.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -258,7 +277,12 @@ function eventCard(e, hideDay = false) {
         ? `${e.startHour}h – ${e.startHour + (e.durationHours || 1)}h`
         : `${e.startHour}h`)
     : '';
-  const dayPart  = hideDay ? '' : e.day;
+  let dayPart = '';
+  if (!hideDay && e.day) {
+    dayPart = (mondayISO && e.day in DAY_ORDER)
+      ? formatDate(eventDate(mondayISO, e.day))
+      : e.day;
+  }
   const timePart = [dayPart, timeStr].filter(Boolean).join(' · ');
   const detail   = [
     e.teacher || null,
