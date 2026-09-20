@@ -65,10 +65,9 @@ header h1 {
 }
 
 #header-logo {
-  height: 28px;     /* cale sur la hauteur de la ligne de texte */
+  height: 28px;
   width: auto;
   display: block;
-  mix-blend-mode: multiply;   /* fond blanc du PNG devient transparent sur fond bleu */
 }
 
 .header-ics {
