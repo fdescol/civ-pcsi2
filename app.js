@@ -64,10 +64,24 @@ function setView(v) {
 // Autocomplete
 // ----------------------------------------------------------------
 function initAutocomplete() {
-  const input = document.getElementById('student-search');
-  const list  = document.getElementById('suggestions');
+  const input     = document.getElementById('student-search');
+  const list      = document.getElementById('suggestions');
+  const btnClear  = document.getElementById('btn-clear-search');
+
+  function updateClearBtn() {
+    btnClear.hidden = input.value.length === 0;
+  }
+
+  btnClear.addEventListener('mousedown', e => {
+    e.preventDefault();
+    input.value = '';
+    list.innerHTML = '';
+    btnClear.hidden = true;
+    input.focus();
+  });
 
   input.addEventListener('input', () => {
+    updateClearBtn();
     const q = input.value.trim();
     list.innerHTML = '';
     if (q.length < 2) return;
@@ -87,6 +101,7 @@ function initAutocomplete() {
         selectStudent(s.id);
         input.value = s.name;
         list.innerHTML = '';
+        updateClearBtn();
       });
       list.appendChild(li);
     });
@@ -323,7 +338,9 @@ function readUrlParams() {
     const normalise = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const s = DATA.students.find(st => normalise(st.name) === normalise(eName));
     if (s) {
-      document.getElementById('student-search').value = s.name;
+      const inp = document.getElementById('student-search');
+      inp.value = s.name;
+      document.getElementById('btn-clear-search').hidden = false;
       selectStudent(s.id);
       if (wNum) {
         const idx = DATA.weeks.findIndex(w => w.number === parseInt(wNum, 10));
@@ -343,6 +360,7 @@ function restoreLastStudent() {
   const s = DATA.students.find(st => normalise(st.name) === normalise(name));
   if (!s) return;
   document.getElementById('student-search').value = s.name;
+  document.getElementById('btn-clear-search').hidden = false;
   selectStudent(s.id);
 }
 

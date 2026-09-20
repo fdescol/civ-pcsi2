@@ -89,9 +89,13 @@ header h1 {
 
 .search-wrapper {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
 
 #student-search {
+  flex: 1;
   width: 100%;
   padding: 0.55rem 0.75rem;
   font-size: 1rem;
@@ -101,6 +105,22 @@ header h1 {
   background: #fff;
   color: var(--text);
 }
+
+#btn-clear-search {
+  position: absolute;
+  right: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(0,0,0,0.4);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+}
+#btn-clear-search:hover { color: var(--text); }
 
 #suggestions {
   position: absolute;
@@ -279,19 +299,21 @@ header h1 {
 .event-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .badge-type {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  padding: 0.15rem 0.45rem;
+  padding: 0.1rem 0.35rem;
   border-radius: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   white-space: nowrap;
   color: #fff;
+  flex-shrink: 0;
 }
 
 .badge-colle  { background: var(--colle); }
@@ -301,14 +323,20 @@ header h1 {
 
 .event-subject {
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .event-time {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--muted);
   margin-left: auto;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .event-detail {
