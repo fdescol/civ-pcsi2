@@ -19,7 +19,10 @@ const DAY_ORDER = { Lundi: 0, Mardi: 1, Mercredi: 2, Jeudi: 3, Vendredi: 4 };
 // ----------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   fetch('data.json')
-    .then(r => r.json())
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status} — impossible de charger data.json`);
+      return r.json();
+    })
     .then(data => {
       DATA = data;
       initAutocomplete();
@@ -28,8 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
     .catch(err => {
+      console.error('Erreur chargement:', err);
       document.getElementById('schedule').innerHTML =
-        `<p class="no-events">Erreur de chargement des données : ${err.message}</p>`;
+        `<p class="no-events">Erreur de chargement des données.<br>` +
+        `<small>${err.message}</small><br>` +
+        `<small>La page doit être servie via un serveur HTTP (pas en file://).</small></p>`;
     });
 
   document.getElementById('btn-prev').addEventListener('click', () => navigate(-1));
