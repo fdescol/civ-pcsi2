@@ -419,13 +419,11 @@ function eventToVEVENT(e, mondayISO, studentId) {
   const dayOffset = DAY_ORDER[e.day] ?? 0;
   const startHour = e.startHour ?? 8;
 
-  // Durée ICS : 1h par défaut pour TP et TD (durée réelle non garantie par l'Excel),
-  // sauf TP dont la durée 2h est confirmée par l'emploi du temps officiel.
-  // Colles et LV2 restent à durationHours (1h).
-  // Pour passer tous les TP/TD à 2h : remplacer la ligne ci-dessous par :
-  //   const duration = e.durationHours || 1;
-  const CONFIRMED_2H_TYPES = ['TP']; // TD exclus car durée non garantie dans l'Excel
-  const duration = (CONFIRMED_2H_TYPES.includes(e.type) ? 2 : (e.durationHours || 1));
+  // Durée ICS : utilise durationHours du JSON, qui reflète la durée confirmée par l'Excel.
+  // TDs fixes lundi/jeudi : 1h (créneaux consécutifs dans l'Excel → prouve 1h).
+  // TPs (Physique, SI, Info) + TD Chimie mercredi : 2h (blocs EDT).
+  // Colles et LV2 : 1h.
+  const duration = e.durationHours || 1;
 
   // Calcule la date locale (sans fuseau) du jour de l'événement
   const pad2 = n => String(n).padStart(2, '0');

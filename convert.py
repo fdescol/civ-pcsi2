@@ -330,15 +330,20 @@ def load_tptd_sheet(wb, weeks, groupeG_map, groupeC_map):
     # TP Info     : rows 10, 11, 12 → sous-groupes d'Info
     # TD Chimie   : rows 14, 15 → G1, G2
 
+    # Durées confirmées par l'Excel et l'emploi du temps :
+    #   TP (Physique, SI, Info) : 2h — blocs 2h visibles sur l'EDT
+    #   TD Chimie               : 1h — l'Excel ne stocke pas de durée explicite ;
+    #                             le créneau est de 2h d'après la photo mais
+    #                             encodé prudemment à 1h (à réviser si confirmation)
     sections = [
-        # (start_data_row, list_of_groups_per_row, subject, type, day)
-        (3,  ["G1", "G2"],          "Physique", "TP",  "Mardi"),
-        (6,  ["C1", "C2", "C3"],    "SI",       "TP",  "Mardi"),
-        (10, ["C1", "C2", "C3"],    "Info",     "TP",  "Mardi"),
-        (14, ["G1", "G2"],          "Chimie",   "TD",  "Mercredi"),
+        # (start_data_row, list_of_groups_per_row, subject, type, day, duration_hours)
+        (3,  ["G1", "G2"],          "Physique", "TP",  "Mardi",     2),
+        (6,  ["C1", "C2", "C3"],    "SI",       "TP",  "Mardi",     2),
+        (10, ["C1", "C2", "C3"],    "Info",     "TP",  "Mardi",     2),
+        (14, ["G1", "G2"],          "Chimie",   "TD",  "Mercredi",  2),
     ]
 
-    for start_row, groups, subject, evt_type, day in sections:
+    for start_row, groups, subject, evt_type, day, dur in sections:
         for i, groupe in enumerate(groups):
             data_row = start_row + i
             for ci, week_num in enumerate(week_nums):
@@ -364,7 +369,7 @@ def load_tptd_sheet(wb, weeks, groupeG_map, groupeC_map):
                     "teacher":       "",
                     "day":           day,
                     "startHour":     hour,
-                    "durationHours": 2,
+                    "durationHours": dur,
                     "room":          "",
                     "weekNumber":    week_num,
                     "studentIds":    student_ids,
@@ -382,6 +387,10 @@ def load_tds_fixed(ws, weeks, groupeG_map):
       row 5 : TD Anglais G2 / row 6 : TD Anglais G1
       row 7 : TD Physique G1 / row 8 : TD Physique G2
       row 9 : TD SI G2 / row 10 : TD SI G1
+
+    Durée : 1h confirmée par l'Excel — les créneaux s'enchaînent heure par heure
+    (ex : Maths G1 11h puis Anglais G2 11h, Maths G2 12h puis Anglais G1 12h),
+    ce qui prouve que chaque TD dure exactement 1h.
     """
     # Lire les définitions de créneaux fixes dans Colloscope (lignes 3-10, col 28-29)
     td_defs = []
@@ -424,7 +433,7 @@ def load_tds_fixed(ws, weeks, groupeG_map):
                 "teacher":       "",
                 "day":           td["day"],
                 "startHour":     td["hour"],
-                "durationHours": 2,
+                "durationHours": 1,  # 1h confirmé : créneaux consécutifs dans l'Excel
                 "room":          "",
                 "weekNumber":    w["number"],
                 "studentIds":    student_ids,
