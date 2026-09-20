@@ -252,12 +252,15 @@ function eventCard(e, hideDay = false) {
     .replace(/[^a-z]/g, '');
   const subjClass  = `subj-${subjKey}`;
   const badgeClass = `badge-${e.type.toLowerCase()}`;
+  const showEndHour = e.type === 'Colle';
   const timeStr    = e.startHour != null
-    ? `${e.startHour}h – ${e.startHour + (e.durationHours || 1)}h`
+    ? (showEndHour
+        ? `${e.startHour}h – ${e.startHour + (e.durationHours || 1)}h`
+        : `${e.startHour}h`)
     : '';
   const dayPart  = hideDay ? '' : e.day;
-  const timePart = [dayPart, timeStr].filter(Boolean).join(' · ');
   const detail   = [
+    dayPart || null,
     e.teacher || null,
     e.room ? `Salle : ${e.room}` : null,
   ].filter(Boolean).join(' · ');
@@ -267,7 +270,7 @@ function eventCard(e, hideDay = false) {
       <div class="event-header">
         <span class="badge-type ${badgeClass}">${e.type}</span>
         <span class="event-subject">${e.subject}</span>
-        ${timePart ? `<span class="event-time">${timePart}</span>` : ''}
+        ${timeStr ? `<span class="event-time">${timeStr}</span>` : ''}
       </div>
       ${detail ? `<div class="event-detail">${detail}</div>` : ''}
     </div>
