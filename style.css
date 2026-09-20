@@ -44,7 +44,7 @@ body {
 header {
   background: var(--accent);
   color: #fff;
-  padding: 1rem 1rem 0.75rem;
+  padding: 1rem 1rem 0.4rem;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -324,17 +324,15 @@ header h1 {
 }
 
 /* ============================================================
-   Disclaimer
+   Disclaimer (intégré au header)
    ============================================================ */
-#disclaimer {
-  font-size: 0.8rem;
-  color: #7a5800;
-  background: #fffbe6;
-  border-top: 1px solid #f0d080;
-  border-bottom: 1px solid #f0d080;
-  padding: 0.55rem 1rem;
+#disclaimer-inline {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.75);
   text-align: center;
-  line-height: 1.5;
+  margin-top: 0.3rem;
+  padding-bottom: 0.3rem;
+  line-height: 1.3;
 }
 
 /* ============================================================
