@@ -139,7 +139,7 @@ def check_structure(remote_path: Path) -> list:
       4. Semaines entre 5 et 25 lignes
       5. Ligne 1 Colloscope cols G-W (1-based 7-23) = entiers 1-52
     """
-    wb = openpyxl.load_workbook(remote_path, data_only=True, read_only=True)
+    wb = openpyxl.load_workbook(remote_path, data_only=True)
     warnings = []
 
     # 1. Feuilles attendues
@@ -158,9 +158,13 @@ def check_structure(remote_path: Path) -> list:
             warnings.append(
                 f"Colloscope : seulement {ws.max_column} colonnes (attendu >= 23, colonne W)"
             )
-        # 5. Ligne 1 cols G-W (1-based 7 a 23) doivent etre des entiers 1-52
+        # 5. Ligne 1 : seules les colonnes de WEEK_COLS (0-based) doivent
+        #    contenir des entiers 1-52. Les colonnes vides L et T sont ignorees.
+        # WEEK_COLS est 0-based, on convertit en 1-based pour openpyxl.
+        WEEK_COLS_1BASED = [6+1, 7+1, 8+1, 9+1, 10+1, 12+1, 13+1, 14+1,
+                            15+1, 16+1, 17+1, 18+1, 20+1, 21+1, 22+1]
         bad_cols = []
-        for col in range(7, 24):  # G=7 ... W=23
+        for col in WEEK_COLS_1BASED:
             v = ws.cell(row=1, column=col).value
             try:
                 n = int(float(str(v))) if v is not None else None
