@@ -167,16 +167,22 @@ function renderWeek() {
     e.studentIds.includes(currentStudent.id)
   );
 
-  // Group by day
-  const byDay = {};
+  // Group by type, then sort within each type by day then startHour
+  const TYPE_ORDER  = { Colle: 0, TP: 1, TD: 2, LV2: 3 };
+  const TYPE_LABELS = { Colle: 'Colles', TP: 'Travaux Pratiques', TD: 'Travaux Dirigés', LV2: 'LV2' };
+
+  const byType = {};
   evts.forEach(e => {
-    const d = e.day;
-    if (!byDay[d]) byDay[d] = [];
-    byDay[d].push(e);
+    const t = e.type;
+    if (!byType[t]) byType[t] = [];
+    byType[t].push(e);
   });
 
-  // Sort each day's events by startHour
-  Object.values(byDay).forEach(arr => arr.sort((a, b) => (a.startHour ?? 99) - (b.startHour ?? 99)));
+  Object.values(byType).forEach(arr => arr.sort((a, b) => {
+    const dDiff = (DAY_ORDER[a.day] ?? 9) - (DAY_ORDER[b.day] ?? 9);
+    if (dDiff !== 0) return dDiff;
+    return (a.startHour ?? 99) - (b.startHour ?? 99);
+  }));
 
   // Render
   const schedule = document.getElementById('schedule');
@@ -185,11 +191,11 @@ function renderWeek() {
     return;
   }
 
-  const days = Object.keys(byDay).sort((a, b) => (DAY_ORDER[a] ?? 9) - (DAY_ORDER[b] ?? 9));
-  schedule.innerHTML = days.map(day => `
+  const types = Object.keys(byType).sort((a, b) => (TYPE_ORDER[a] ?? 9) - (TYPE_ORDER[b] ?? 9));
+  schedule.innerHTML = types.map(type => `
     <div class="day-block">
-      <div class="day-title">${day}</div>
-      ${byDay[day].map(eventCard).join('')}
+      <div class="day-title">${TYPE_LABELS[type] || type}</div>
+      ${byType[type].map(eventCard).join('')}
     </div>
   `).join('');
 }
@@ -201,11 +207,12 @@ function eventCard(e) {
     .replace(/[^a-z]/g, '');
   const subjClass   = `subj-${subjKey}`;
   const badgeClass  = `badge-${e.type.toLowerCase()}`;
-  const timeStr     = e.startHour != null
+  const timeStr = e.startHour != null
     ? `${e.startHour}h – ${e.startHour + (e.durationHours || 1)}h`
     : '';
+  const dayTime = [e.day, timeStr].filter(Boolean).join(' · ');
   const detail = [
-    e.teacher ? `${e.teacher}` : null,
+    e.teacher ? e.teacher : null,
     e.room    ? `Salle : ${e.room}` : null,
   ].filter(Boolean).join(' · ');
 
@@ -214,7 +221,7 @@ function eventCard(e) {
       <div class="event-header">
         <span class="badge-type ${badgeClass}">${e.type}</span>
         <span class="event-subject">${e.subject}</span>
-        ${timeStr ? `<span class="event-time">${timeStr}</span>` : ''}
+        ${dayTime ? `<span class="event-time">${dayTime}</span>` : ''}
       </div>
       ${detail ? `<div class="event-detail">${detail}</div>` : ''}
     </div>
