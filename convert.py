@@ -463,6 +463,78 @@ def load_lv2_events(students, weeks):
     return events
 
 # ---------------------------------------------------------------------------
+# HARDCODE — Mercredi matin : TD Maths + TP Chimie (non encodés dans l'Excel)
+# ---------------------------------------------------------------------------
+# ACTIVATION : mettre MERCREDI_MATIN = True pour inclure ces créneaux.
+# DÉSACTIVATION : mettre MERCREDI_MATIN = False (ou supprimer la section).
+#
+# Source : emploi du temps photographié (1er semestre).
+# Ces créneaux N'APPARAISSENT PAS dans le fichier Excel et ont été ajoutés
+# manuellement d'après la photo.
+#
+# Logique :
+#   8h–10h  → G1 : TD Mathématiques  |  G2 : TP Chimie (75%)
+#  10h–12h  → G1 : TP Chimie (75%)   |  G2 : TD Mathématiques
+#
+# "75%" : terme de l'emploi du temps officiel (sous-groupe partiel).
+# Ici on applique à G1 entier et G2 entier faute de subdivision dans l'Excel.
+#
+# Semaines : toutes les semaines de cours (pas d'alternance connue).
+# À réviser si un emploi du temps plus détaillé est fourni.
+#
+MERCREDI_MATIN = True   # <-- mettre False pour désactiver
+
+def load_mercredi_matin(weeks, groupeG_map):
+    """
+    Génère les événements du mercredi matin hardcodés.
+    Retourne une liste vide si MERCREDI_MATIN est False.
+    """
+    if not MERCREDI_MATIN:
+        return []
+
+    events = []
+    for w in weeks:
+        wn = w["number"]
+
+        # G1 : TD Maths 8h, TP Chimie 10h
+        g1_ids = groupeG_map.get("G1", [])
+        if g1_ids:
+            events.append({
+                "type": "TD", "subject": "Mathématiques",
+                "teacher": "", "day": "Mercredi",
+                "startHour": 8, "durationHours": 2, "room": "",
+                "weekNumber": wn, "studentIds": g1_ids,
+                "note": "hardcoded-mercredi-matin",
+            })
+            events.append({
+                "type": "TP", "subject": "Chimie (75%)",
+                "teacher": "", "day": "Mercredi",
+                "startHour": 10, "durationHours": 2, "room": "",
+                "weekNumber": wn, "studentIds": g1_ids,
+                "note": "hardcoded-mercredi-matin",
+            })
+
+        # G2 : TP Chimie 8h, TD Maths 10h
+        g2_ids = groupeG_map.get("G2", [])
+        if g2_ids:
+            events.append({
+                "type": "TP", "subject": "Chimie (75%)",
+                "teacher": "", "day": "Mercredi",
+                "startHour": 8, "durationHours": 2, "room": "",
+                "weekNumber": wn, "studentIds": g2_ids,
+                "note": "hardcoded-mercredi-matin",
+            })
+            events.append({
+                "type": "TD", "subject": "Mathématiques",
+                "teacher": "", "day": "Mercredi",
+                "startHour": 10, "durationHours": 2, "room": "",
+                "weekNumber": wn, "studentIds": g2_ids,
+                "note": "hardcoded-mercredi-matin",
+            })
+
+    return events
+
+# ---------------------------------------------------------------------------
 def assign_ids(events):
     """Ajoute un champ 'id' unique à chaque événement."""
     for i, ev in enumerate(events):
@@ -513,7 +585,14 @@ def main():
     events_lv2 = load_lv2_events(students, weeks)
     print(f"  {len(events_lv2)} événements LV2")
 
-    all_events = events_colles + events_tps_coll + events_tptd + events_tds + events_lv2
+    # 9. Mercredi matin hardcodé (TD Maths + TP Chimie 75%)
+    events_mercredi = load_mercredi_matin(weeks, groupeG_map)
+    if events_mercredi:
+        print(f"  {len(events_mercredi)} événements mercredi matin [HARDCODED — voir MERCREDI_MATIN dans convert.py]")
+    else:
+        print(f"  Mercredi matin hardcodé : désactivé (MERCREDI_MATIN=False)")
+
+    all_events = events_colles + events_tps_coll + events_tptd + events_tds + events_lv2 + events_mercredi
     assign_ids(all_events)
     print(f"  Total : {len(all_events)} événements")
 
