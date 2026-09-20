@@ -22,7 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(data => {
       DATA = data;
       initAutocomplete();
-      readUrlParams();
+      if (!readUrlParams()) {
+        restoreLastStudent();
+      }
     })
     .catch(err => {
       document.getElementById('schedule').innerHTML =
@@ -100,9 +102,12 @@ function initAutocomplete() {
 // ----------------------------------------------------------------
 // Student selection
 // ----------------------------------------------------------------
+const LS_KEY = 'civ-pcsi2-last-student';
+
 function selectStudent(studentId) {
   currentStudent = DATA.students.find(s => s.id === studentId);
   if (!currentStudent) return;
+  try { localStorage.setItem(LS_KEY, currentStudent.name); } catch (_) {}
 
   // Info bar
   document.getElementById('student-name').textContent = currentStudent.name;
@@ -240,19 +245,26 @@ function readUrlParams() {
     const s = DATA.students.find(st => normalise(st.name) === normalise(eName));
     if (s) {
       document.getElementById('student-search').value = s.name;
-      // If week param present, find its index first
-      if (wNum) {
-        const idx = DATA.weeks.findIndex(w => w.number === parseInt(wNum, 10));
-        if (idx >= 0) currentWeekIdx = idx;
-      }
       selectStudent(s.id);
       if (wNum) {
         const idx = DATA.weeks.findIndex(w => w.number === parseInt(wNum, 10));
         if (idx >= 0) { currentWeekIdx = idx; renderWeek(); }
       }
-      return;
+      return true;
     }
   }
+  return false;
+}
+
+function restoreLastStudent() {
+  let name;
+  try { name = localStorage.getItem(LS_KEY); } catch (_) { return; }
+  if (!name) return;
+  const normalise = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const s = DATA.students.find(st => normalise(st.name) === normalise(name));
+  if (!s) return;
+  document.getElementById('student-search').value = s.name;
+  selectStudent(s.id);
 }
 
 function writeUrlParams() {

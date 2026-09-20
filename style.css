@@ -94,10 +94,12 @@ header h1 {
   cursor: pointer;
   border-bottom: 1px solid var(--border);
   font-size: 0.95rem;
+  color: var(--text);
 }
 #suggestions li:last-child { border-bottom: none; }
 #suggestions li:hover, #suggestions li[aria-selected="true"] {
   background: var(--surface);
+  color: var(--text);
 }
 
 /* ============================================================
